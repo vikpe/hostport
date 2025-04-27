@@ -63,6 +63,7 @@ impl TryFrom<&str> for HostPort {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let (host, port_str) = value.split_once(':').ok_or(HostPortError::InvalidFormat)?;
+
         let port = port_str
             .parse::<u16>()
             .map_err(|_| HostPortError::InvalidPort(port_str.to_string()))?;
@@ -116,6 +117,7 @@ mod tests {
     use anyhow::Result;
     use pretty_assertions::assert_eq;
     use proptest::prelude::*;
+    use validate::is_valid_host;
 
     proptest! {
         #[test]
@@ -127,15 +129,8 @@ mod tests {
             invalid_str in r"[^:]*",
             invalid_port in r"[a-zA-Z]{1,10}"
         ) {
-            // Skip all-digit hostnames that don't have a dot
-            if !host.contains('.') && host.chars().all(|c| c.is_ascii_digit()) {
-                return Ok(());
-            }
-
-            // Skip hosts that are too long or contain invalid labels
-            if host.len() > 255 || host.split('.').any(|label|
-                label.is_empty() || label.len() > 63 ||
-                label.starts_with('-') || label.ends_with('-')) {
+            // Skip valid hosts
+            if !is_valid_host(&host) {
                 return Ok(());
             }
 
@@ -146,7 +141,7 @@ mod tests {
             prop_assert!(result.is_ok());
             let hostport = result.unwrap();
             prop_assert_eq!(hostport.host(), host.clone());
-            prop_assert_eq!(hostport.port(), port.clone());
+            prop_assert_eq!(hostport.port(), port);
 
             // Invalid cases
 
@@ -206,6 +201,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn test_serialize() -> Result<()> {
         let hostport = HostPort::new("quake.se", 28501)?;
         assert_eq!(
@@ -216,6 +212,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn test_deserialize() -> Result<()> {
         assert_eq!(
             serde_json::from_str::<HostPort>(r#""quake.se:28501""#)?,
