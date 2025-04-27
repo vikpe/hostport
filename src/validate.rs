@@ -109,12 +109,16 @@ mod tests {
         assert!(!is_valid_host(".aaa"));
         assert!(!is_valid_host("a.0"));
         assert!(!is_valid_host("f%%"));
-        assert!(!is_valid_host("0"));
-        assert!(!is_valid_host("10"));
+        assert!(!is_valid_host("a.0"));
         assert!(!is_valid_host("quake|se"));
+        assert!(!is_valid_host("1000.0.0.0"));
 
         // valid
         assert!(is_valid_host("quake1.se"));
         assert!(is_valid_host("1quake.se"));
+        assert!(is_valid_host("quake.se"));
+        assert!(is_valid_host("quake-world.se"));
+        assert!(is_valid_host("localhost"));
+        assert!(is_valid_host("10.10.10.10"));
     }
 }
