@@ -1,4 +1,4 @@
-# hostport
+# hostport [![Test](https://github.com/vikpe/hostport/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/vikpe/hostport/actions/workflows/test.yml) [![crates](https://img.shields.io/crates/v/hostport)](https://crates.io/crates/hostport) [![docs.rs](https://img.shields.io/docsrs/hostport)](https://docs.rs/hostport/)
 
 > A crate for working with host:port combinations
 
