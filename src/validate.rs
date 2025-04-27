@@ -1,18 +1,25 @@
-//! Validation
+//! Utilities for validation.
 
 use std::net::Ipv4Addr;
 
-/// Checks if the given string is a valid host (network alias, domain or IP)
+/// Checks if the given string is a valid host (network alias, domain, or IP).
+///
 /// # Examples
 /// ```
 /// use hostport::validate::is_valid_host;
+///
+/// // valid
 /// assert!(is_valid_host("quake.se"));
 /// assert!(is_valid_host("quake-world.se"));
 /// assert!(is_valid_host("localhost"));
 /// assert!(is_valid_host("10.10.10.10"));
-/// assert!(!is_valid_host("foo."));
+///
+/// // invalid
+/// assert!(!is_valid_host("f%%"));
 /// assert!(!is_valid_host("a.0"));
 /// assert!(!is_valid_host("1000.0.0.0"));
+/// ```
+#[must_use]
 pub fn is_valid_host(value: &str) -> bool {
     if value.is_empty() || value.len() > 255 {
         return false;
@@ -33,7 +40,7 @@ pub fn is_valid_host(value: &str) -> bool {
     let parts: Vec<&str> = value.split('.').collect();
 
     match parts.len() {
-        3 if value.chars().all(|c| c.is_ascii_digit() || c == '.') => {
+        4 if value.chars().all(|c| c.is_ascii_digit() || c == '.') => {
             value.parse::<Ipv4Addr>().is_ok()
         }
         _ => parts.into_iter().all(is_valid_label),

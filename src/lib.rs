@@ -1,6 +1,8 @@
 #![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 
 //! HostPort
+//! A library for parsing and validating host:port combinations.
+
 pub mod validate;
 
 use anyhow::Result;
@@ -13,7 +15,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 /// Represents a host and port combination.
 #[derive(Clone, Debug, Default, Ord, PartialOrd, Eq, PartialEq)]
 pub struct HostPort {
-    /// Hostname, network alias or IP address.
+    /// Hostname, network alias, or IP address.
     host: String,
 
     /// Port number.
@@ -22,6 +24,7 @@ pub struct HostPort {
 
 impl HostPort {
     /// Creates a new `HostPort` instance.
+    ///
     /// # Examples
     /// ```
     /// use hostport::HostPort;
@@ -30,9 +33,9 @@ impl HostPort {
     /// assert_eq!(hostport.host(), "quake.se");
     /// assert_eq!(hostport.port(), 28000);
     /// ```
-    pub fn new(host: &str, port: u16) -> Result<HostPort, HostPortError> {
+    pub fn new(host: &str, port: u16) -> Result<HostPort, HostPortParseError> {
         if !validate::is_valid_host(host) {
-            return Err(HostPortError::InvalidHost(host.to_string()));
+            return Err(HostPortParseError::InvalidHost(host.to_string()));
         }
         Ok(Self {
             host: host.to_string(),
@@ -41,32 +44,47 @@ impl HostPort {
     }
 
     /// Returns the host part of the `HostPort`.
+    #[must_use]
     pub fn host(&self) -> &str {
         &self.host
     }
 
     /// Returns the port part of the `HostPort`.
+    #[must_use]
     pub fn port(&self) -> u16 {
         self.port
     }
 }
 
 /// Implements the `From` trait for converting a `HostPort` to a string.
+///
 /// # Examples
 /// ```
 /// use hostport::HostPort;
-/// let hostport = HostPort::new("quake.se", 28000).unwrap();
-/// assert_eq!(hostport.to_string(), "quake.se:28000");
+///
+/// let domain = HostPort::try_from("quake.se:28000").unwrap();
+/// assert_eq!(domain.host(), "quake.se");
+/// assert_eq!(domain.port(), 28000);
+///
+/// let ip = HostPort::try_from("10.10.10.10:28000").unwrap();
+/// assert_eq!(ip.host(), "10.10.10.10");
+/// assert_eq!(ip.port(), 28000);
+///
+/// let network_alias = HostPort::try_from("localhost:28000").unwrap();
+/// assert_eq!(network_alias.host(), "localhost");
+/// assert_eq!(network_alias.port(), 28000);
 /// ```
 impl TryFrom<&str> for HostPort {
-    type Error = HostPortError;
+    type Error = HostPortParseError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let (host, port_str) = value.split_once(':').ok_or(HostPortError::InvalidFormat)?;
+        let (host, port_str) = value
+            .split_once(':')
+            .ok_or(HostPortParseError::InvalidFormat)?;
 
         let port = port_str
             .parse::<u16>()
-            .map_err(|_| HostPortError::InvalidPort(port_str.to_string()))?;
+            .map_err(|_| HostPortParseError::InvalidPort(port_str.to_string()))?;
         HostPort::new(host, port)
     }
 }
@@ -98,14 +116,23 @@ impl<'de> Deserialize<'de> for HostPort {
     }
 }
 
+/// Errors that can occur while parsing a `HostPort`.
+///
+/// # Variants
+/// - `InvalidFormat`: The input string does not follow the `host:port` format.
+/// - `InvalidHost`: The host part of the input is invalid.
+/// - `InvalidPort`: The port part of the input is invalid.
 #[derive(Debug, Error, Eq, PartialEq)]
-pub enum HostPortError {
+pub enum HostPortParseError {
+    /// The input string does not follow the `host:port` format.
     #[error("Invalid format, expected host:port")]
     InvalidFormat,
 
+    /// The host part of the input is invalid.
     #[error("Invalid host: {0}")]
     InvalidHost(String),
 
+    /// The port part of the input is invalid.
     #[error("Invalid port: {0}")]
     InvalidPort(String),
 }
@@ -147,14 +174,14 @@ mod tests {
 
             // Case 1: No colon separator
             let result = HostPort::try_from(invalid_str.as_str());
-            prop_assert_eq!(result.err(), Some(HostPortError::InvalidFormat));
+            prop_assert_eq!(result.err(), Some(HostPortParseError::InvalidFormat));
 
             // Case 2: Invalid port (non-numeric)
             if !invalid_port.is_empty() {
                 let input = format!("{}:{}", host.clone(), invalid_port.clone());
                 let result = HostPort::try_from(input.as_str());
                 prop_assert!(result.is_err());
-                prop_assert!(matches!(result.err(), Some(HostPortError::InvalidPort(_))));
+                prop_assert!(matches!(result.err(), Some(HostPortParseError::InvalidPort(_))));
             }
 
             // Case 3: Invalid host with valid port
@@ -162,7 +189,7 @@ mod tests {
             let input = format!("{}:{}", invalid_host, port);
             let result = HostPort::try_from(input.as_str());
             prop_assert!(result.is_err());
-            prop_assert!(matches!(result.err(), Some(HostPortError::InvalidHost(_))));
+            prop_assert!(matches!(result.err(), Some(HostPortParseError::InvalidHost(_))));
 
             // Case 4: Empty string before colon
             let input = format!(":{}", port);
@@ -173,7 +200,7 @@ mod tests {
             let input = format!("{}:", host);
             let result = HostPort::try_from(input.as_str());
             prop_assert!(result.is_err());
-            prop_assert!(matches!(result.err(), Some(HostPortError::InvalidPort(_))));
+            prop_assert!(matches!(result.err(), Some(HostPortParseError::InvalidPort(_))));
         }
     }
 
@@ -182,7 +209,7 @@ mod tests {
         {
             assert_eq!(
                 HostPort::new("_", 50).unwrap_err(),
-                HostPortError::InvalidHost("_".to_string())
+                HostPortParseError::InvalidHost("_".to_string())
             );
         }
         {
