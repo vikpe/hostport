@@ -7,13 +7,15 @@ pub mod validate;
 
 use anyhow::Result;
 use std::fmt::Display;
+use std::net::SocketAddrV4;
+use std::str::FromStr;
 use thiserror::Error;
 
 #[cfg(feature = "json")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// Represents a host and port combination.
-#[derive(Clone, Debug, Default, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct HostPort {
     /// Hostname, network alias, or IP address.
     host: String,
@@ -92,6 +94,34 @@ impl TryFrom<&str> for HostPort {
 impl Display for HostPort {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}:{}", self.host, self.port)
+    }
+}
+
+impl From<&SocketAddrV4> for HostPort {
+    fn from(socket_addr: &SocketAddrV4) -> Self {
+        HostPort {
+            host: socket_addr.ip().to_string(),
+            port: socket_addr.port(),
+        }
+    }
+}
+
+impl FromStr for HostPort {
+    type Err = HostPortParseError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        HostPort::try_from(value)
+    }
+}
+
+impl PartialEq<&str> for HostPort {
+    fn eq(&self, other: &&str) -> bool {
+        if let Some((host, port)) = other.rsplit_once(':') {
+            if let Ok(port) = port.parse::<u16>() {
+                return self.host == host && self.port == port;
+            }
+        }
+        false
     }
 }
 
@@ -224,6 +254,30 @@ mod tests {
     fn test_display() -> Result<()> {
         let hostport = HostPort::new("quake.se", 28501)?;
         assert_eq!(hostport.to_string(), "quake.se:28501");
+        Ok(())
+    }
+
+    #[test]
+    fn test_from_socket_addr() -> Result<()> {
+        let socket_addr = SocketAddrV4::from_str("10.10.10.10:28501")?;
+        let hostport: HostPort = HostPort::from(&socket_addr);
+        assert_eq!(hostport.host(), "10.10.10.10");
+        assert_eq!(hostport.port(), 28501);
+        Ok(())
+    }
+
+    #[test]
+    fn test_from_str() -> Result<()> {
+        let hostport = HostPort::from_str("quake.se:28501")?;
+        assert_eq!(hostport.host(), "quake.se");
+        assert_eq!(hostport.port(), 28501);
+        Ok(())
+    }
+
+    #[test]
+    fn test_partial_eq_str() -> Result<()> {
+        assert_eq!(HostPort::new("quake.se", 28501)?, "quake.se:28501");
+        assert_ne!(HostPort::new("quake.se", 28501)?, "quake.se:28502");
         Ok(())
     }
 
