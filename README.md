@@ -2,8 +2,8 @@
 
 > A crate for working with host:port combinations
 
-* `host` - Domain, network alias or IP.
-* `port` - Port number in range `0-65535`.
+- `host` - Domain, network alias or IP.
+- `port` - Port number in range `0-65535`.
 
 ## HostPort struct
 
