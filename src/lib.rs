@@ -1,7 +1,17 @@
 #![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 
-//! HostPort
-//! A library for parsing and validating host:port combinations.
+//! # hostport
+//!
+//! A library for parsing, validating, and working with `host:port` combinations.
+//!
+//! ## Example
+//! ```
+//! use hostport::HostPort;
+//!
+//! let hostport = HostPort::new("localhost:8080").unwrap();
+//! assert_eq!(hostport.host(), "localhost");
+//! assert_eq!(hostport.port(), 8080);
+//! ```
 
 pub mod validate;
 
@@ -54,6 +64,17 @@ impl HostPort {
     pub fn port(&self) -> u16 {
         self.port
     }
+
+    /// Checks if the `HostPort` matches the given host and port.
+    #[must_use]
+    pub fn eq_hostport_str(host: &str, port: u16, s: &str) -> bool {
+        if let Some((h, p)) = s.rsplit_once(':') {
+            if let Ok(p) = p.parse::<u16>() {
+                return h == host && p == port;
+            }
+        }
+        false
+    }
 }
 
 /// Implements the `From` trait for converting a `HostPort` to a string.
@@ -104,6 +125,12 @@ impl From<&SocketAddrV4> for HostPort {
     }
 }
 
+impl From<SocketAddrV4> for HostPort {
+    fn from(socket_addr: SocketAddrV4) -> Self {
+        Self::from(&socket_addr)
+    }
+}
+
 impl FromStr for HostPort {
     type Err = HostPortParseError;
 
@@ -114,12 +141,13 @@ impl FromStr for HostPort {
 
 impl PartialEq<&str> for HostPort {
     fn eq(&self, other: &&str) -> bool {
-        if let Some((host, port)) = other.rsplit_once(':') {
-            if let Ok(port) = port.parse::<u16>() {
-                return self.host == host && self.port == port;
-            }
-        }
-        false
+        HostPort::eq_hostport_str(&self.host, self.port, other)
+    }
+}
+
+impl PartialEq<HostPort> for &str {
+    fn eq(&self, other: &HostPort) -> bool {
+        HostPort::eq_hostport_str(&other.host, other.port, self)
     }
 }
 
@@ -261,6 +289,7 @@ mod tests {
         let hostport: HostPort = HostPort::from(&socket_addr);
         assert_eq!(hostport.host(), "10.10.10.10");
         assert_eq!(hostport.port(), 28501);
+        assert_eq!(HostPort::from(&socket_addr), HostPort::from(socket_addr));
         Ok(())
     }
 
@@ -273,9 +302,12 @@ mod tests {
     }
 
     #[test]
-    fn test_partial_eq_str() -> Result<()> {
+    fn test_partial_eq() -> Result<()> {
         assert_eq!(HostPort::new("quake.se", 28501)?, "quake.se:28501");
         assert_ne!(HostPort::new("quake.se", 28501)?, "quake.se:28502");
+
+        assert_eq!("quake.se:28501", HostPort::new("quake.se", 28501)?);
+        assert_ne!("quake.se:28502", HostPort::new("quake.se", 28501)?);
         Ok(())
     }
 
