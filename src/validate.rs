@@ -1,12 +1,10 @@
-//! Utilities for validation.
-
 use std::net::Ipv4Addr;
 
 /// Checks if the given string is a valid host (network alias, domain, or IP).
 ///
 /// # Examples
 /// ```
-/// use hostport::validate::is_valid_host;
+/// use hostport::is_valid_host;
 ///
 /// // valid
 /// assert!(is_valid_host("quake.se"));
