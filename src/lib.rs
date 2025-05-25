@@ -35,14 +35,12 @@ impl HostPort {
     /// assert_eq!(hostport.host(), "quake.se");
     /// assert_eq!(hostport.port(), 28000);
     /// ```
-    pub fn new(host: &str, port: u16) -> Result<HostPort, HostPortParseError> {
-        if !validate::is_valid_host(host) {
-            return Err(HostPortParseError::InvalidHost(host.to_string()));
+    pub fn new<S: Into<String>>(host: S, port: u16) -> Result<HostPort, HostPortParseError> {
+        let host = host.into();
+        if !validate::is_valid_host(&host) {
+            return Err(HostPortParseError::InvalidHost(host));
         }
-        Ok(Self {
-            host: host.to_string(),
-            port,
-        })
+        Ok(Self { host, port })
     }
 
     /// Returns the host part of the `HostPort`.

@@ -20,7 +20,9 @@ use std::net::Ipv4Addr;
 /// assert!(!is_valid_host("1000.0.0.0"));
 /// ```
 #[must_use]
-pub fn is_valid_host(value: &str) -> bool {
+pub fn is_valid_host<S: Into<String>>(value: S) -> bool {
+    let value = value.into();
+
     if value.is_empty() || value.len() > 255 {
         return false;
     }
