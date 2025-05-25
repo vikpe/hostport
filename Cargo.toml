@@ -27,7 +27,7 @@ pretty_assertions = "1.4.1"
 proptest = "1.6.0"
 
 [features]
-json = ["dep:serde", "dep:serde_json"]
+serde = ["dep:serde", "dep:serde_json"]
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage,coverage_nightly)'] }

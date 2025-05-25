@@ -11,7 +11,7 @@ use std::net::SocketAddrV4;
 use std::str::FromStr;
 use thiserror::Error;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// Represents a host and port combination.
@@ -125,7 +125,7 @@ impl PartialEq<&str> for HostPort {
     }
 }
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 impl Serialize for HostPort {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -135,7 +135,7 @@ impl Serialize for HostPort {
     }
 }
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for HostPort {
     fn deserialize<D>(deserializer: D) -> Result<HostPort, D::Error>
     where
@@ -282,7 +282,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "json")]
+    #[cfg(feature = "serde")]
     fn test_serialize() -> Result<()> {
         let hostport = HostPort::new("quake.se", 28501)?;
         assert_eq!(
@@ -293,7 +293,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "json")]
+    #[cfg(feature = "serde")]
     fn test_deserialize() -> Result<()> {
         assert_eq!(
             serde_json::from_str::<HostPort>(r#""quake.se:28501""#)?,
