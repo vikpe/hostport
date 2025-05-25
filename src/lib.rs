@@ -2,7 +2,12 @@
 
 //! # hostport
 //!
-//! A library for parsing, validating, and working with `host:port` combinations.
+//! A library for parsing, validating, and working with `host:port` combinations, such as `localhost:8080`.
+//!
+//! * `host` - Domain, network alias or IP.
+//! * `port` - Port number in range 0-65535.
+//!
+//! [`HostPort`] supports parsing from strings, formatting to strings, and direct comparison with string literals.
 //!
 //! ## Example
 //! ```
@@ -20,5 +25,5 @@
 mod hostport;
 mod validate;
 
-pub use hostport::{HostPort, HostPortParseError};
+pub use hostport::{HostPort, ParseError};
 pub use validate::is_valid_host;
