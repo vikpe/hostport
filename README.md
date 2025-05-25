@@ -11,7 +11,13 @@
 - Compare with strings
 - Host validation
 
-### Example
+### Installation
+
+```sh
+cargo add hostport
+```
+
+### Usage
 
 ```rust
 use hostport::HostPort;
@@ -25,8 +31,6 @@ assert_eq!(hostport, "localhost:8080");
 assert_eq!(hostport, "localhost:8080".parse::<HostPort>().unwrap());
 ```
 
-### Host validation
-
 ```rust
 use hostport::is_valid_host;
 
@@ -34,4 +38,19 @@ assert!(is_valid_host("quake.se"));
 assert!(is_valid_host("quake-world.se"));
 assert!(is_valid_host("localhost"));
 assert!(is_valid_host("10.10.10.10"));
+```
+
+### Optional Features
+
+- **`serde`** – Enables serialization and deserialization support via [`serde`](https://crates.io/crates/serde).
+
+```sh
+cargo add hostport --features serde
+```
+
+or in `Cargo.toml`:
+
+```toml
+[dependencies]
+hostport = { version = "x.y.z", features = ["serde"] }
 ```
