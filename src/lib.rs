@@ -64,17 +64,6 @@ impl HostPort {
     pub fn port(&self) -> u16 {
         self.port
     }
-
-    /// Checks if the `HostPort` matches the given host and port.
-    #[must_use]
-    pub fn eq_hostport_str(host: &str, port: u16, s: &str) -> bool {
-        if let Some((h, p)) = s.rsplit_once(':') {
-            if let Ok(p) = p.parse::<u16>() {
-                return h == host && p == port;
-            }
-        }
-        false
-    }
 }
 
 /// Implements the `From` trait for converting a `HostPort` to a string.
@@ -141,13 +130,17 @@ impl FromStr for HostPort {
 
 impl PartialEq<&str> for HostPort {
     fn eq(&self, other: &&str) -> bool {
-        HostPort::eq_hostport_str(&self.host, self.port, other)
+        HostPort::try_from(*other)
+            .map(|hp| self == &hp)
+            .unwrap_or(false)
     }
 }
 
 impl PartialEq<HostPort> for &str {
     fn eq(&self, other: &HostPort) -> bool {
-        HostPort::eq_hostport_str(&other.host, other.port, self)
+        HostPort::try_from(*self)
+            .map(|hp| &hp == other)
+            .unwrap_or(false)
     }
 }
 
