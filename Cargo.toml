@@ -4,7 +4,7 @@ description = "Parse and validate host:port combinations."
 keywords = ["host", "port", "parsing"]
 repository = "https://github.com/vikpe/hostport"
 authors = ["Viktor Persson <viktor.persson@arcsin.se>"]
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 license = "MIT"
 include = [
@@ -15,22 +15,24 @@ include = [
 ]
 
 [dependencies]
-anyhow = "1.0.97"
 thiserror = "2.0.12"
 
 serde = { optional = true, version = "1.0.219", features = ["derive"] }
 serde_json = { optional = true, version = "1.0.140" }
 
 [dev-dependencies]
+anyhow = "1.0.97"
 criterion = { version = "0.5.1", default-features = false }
 pretty_assertions = "1.4.1"
 proptest = "1.6.0"
 
 [features]
-json = ["dep:serde", "dep:serde_json"]
+serde = ["dep:serde", "dep:serde_json"]
 
 [lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage,coverage_nightly)'] }
+unexpected_cfgs = { level = "warn", check-cfg = [
+    'cfg(coverage,coverage_nightly)',
+] }
 
 [[bench]]
 name = "bench_lib"
