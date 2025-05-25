@@ -10,19 +10,19 @@
 ```rust
 use hostport::HostPort;
 
-let hostport = HostPort::new("quake.se", 28000)?;
-assert_eq!(hostport.host(), "quake.se");
-assert_eq!(hostport.port(), 28000);
+let hostport = HostPort::new("localhost", 8080).unwrap();
+assert_eq!(hostport.host(), "localhost");
+assert_eq!(hostport.port(), 8080);
+assert_eq!(hostport.to_string(), "localhost:8080");
 
-let hostport = HostPort::try_from("quake.se:28000")?;
-assert_eq!(hostport.host(), "quake.se");
-assert_eq!(hostport.port(), 28000);
+assert_eq!(hostport, "localhost:8080");
+assert_eq!(hostport, "localhost:8080".parse::<HostPort>().unwrap());
 ```
 
 ## Validation
 
 ```rust
-use hostport::validate;
+use hostport::is_valid_host;
 
 assert!(is_valid_host("quake.se"));
 assert!(is_valid_host("quake-world.se"));
