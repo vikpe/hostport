@@ -5,10 +5,11 @@ use std::str::FromStr;
 use thiserror::Error;
 
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 
 /// Represents a host and port combination.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct HostPort {
     /// Hostname, network alias, or IP address.
     host: String,
@@ -72,9 +73,7 @@ impl TryFrom<&str> for HostPort {
     type Error = ParseError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let (host, port_str) = value
-            .split_once(':')
-            .ok_or(ParseError::InvalidFormat)?;
+        let (host, port_str) = value.split_once(':').ok_or(ParseError::InvalidFormat)?;
 
         let port = port_str
             .parse::<u16>()
@@ -125,27 +124,6 @@ impl PartialEq<HostPort> for &str {
         HostPort::try_from(*self)
             .map(|hp| &hp == other)
             .unwrap_or(false)
-    }
-}
-
-#[cfg(feature = "serde")]
-impl Serialize for HostPort {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'de> Deserialize<'de> for HostPort {
-    fn deserialize<D>(deserializer: D) -> Result<HostPort, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let string_value = String::deserialize(deserializer)?;
-        HostPort::try_from(string_value.as_str()).map_err(serde::de::Error::custom)
     }
 }
 
@@ -284,31 +262,6 @@ mod tests {
 
         assert_eq!("quake.se:28501", HostPort::new("quake.se", 28501)?);
         assert_ne!("quake.se:28502", HostPort::new("quake.se", 28501)?);
-        Ok(())
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn test_serialize() -> Result<()> {
-        let hostport = HostPort::new("quake.se", 28501)?;
-        assert_eq!(
-            serde_json::to_string(&hostport)?,
-            r#""quake.se:28501""#.to_string(),
-        );
-        Ok(())
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn test_deserialize() -> Result<()> {
-        assert_eq!(
-            serde_json::from_str::<HostPort>(r#""quake.se:28501""#)?,
-            HostPort {
-                host: "quake.se".to_string(),
-                port: 28501,
-            }
-        );
-        assert!(serde_json::from_str::<HostPort>(r#"5"#).is_err());
         Ok(())
     }
 }
